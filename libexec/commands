@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: sub commands
+# Summary: List all sub commands
+# Help: This command is mostly used for autocompletion in various shells, and for `sub help`.
+# Also, this command helps find commands that are named the same as potentially builtin shell commands (which, cd, etc)
+set -e
+
+shopt -s nullglob
+
+{ for command in "${_SUB_ROOT}/libexec/"*; do
+    command="${command##*libexec/}"
+    command="${command##sub}"
+    [ ! -z $command ] && echo $command
+  done
+} | sort | uniq

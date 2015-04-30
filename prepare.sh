@@ -8,17 +8,19 @@ if [ -z "$NAME" ]; then
 fi
 
 SUBNAME=$(echo $NAME | tr '[A-Z]' '[a-z]')
+FUNNAME="$(echo $NAME | tr '[A-Z-]' '[a-z_]')"
 ENVNAME="$(echo $NAME | tr '[a-z-]' '[A-Z_]')_ROOT"
 
 echo "Preparing your '$SUBNAME' sub!"
 
 if [ "$NAME" != "sub" ]; then
   rm bin/sub
-  mv share/sub share/$SUBNAME
 
-  for file in **/sub*; do
-    sed "s/sub/$SUBNAME/g;s/SUB_ROOT/$ENVNAME/g" "$file" > $(echo $file | sed "s/sub/$SUBNAME/")
-    rm $file
+  for file in **/*; do
+    newFile="$(echo $file | sed "s/sub/$SUBNAME/")"
+
+    sed -i "s/_sub/_$FUNNAME/g;s/sub/$SUBNAME/g;s/SUB_ROOT/$ENVNAME/g;s/%Sub%/sub/g" "$file"
+    [[ "$file" != "$newFile" ]] && mv "$file" "$newFile"
   done
 
   for file in libexec/*; do
