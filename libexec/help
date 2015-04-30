@@ -6,18 +6,24 @@ print_summaries() {
   local summaries=()
   local longest_command=0
   local command
+  local summary
 
-  for command in $(sub-commands); do
+  for command in $( "$_SUB_ROOT/libexec/commands" ); do
     local file="$(command_path "$command")"
-    if [ ! -h "$file" ]; then
-      local summary="$(summary "$file")"
-      if [ -n "$summary" ]; then
-        commands["${#commands[@]}"]="$command"
-        summaries["${#summaries[@]}"]="$summary"
+    [ -z "$file" ] && continue
 
-        if [ "${#command}" -gt "$longest_command" ]; then
-          longest_command="${#command}"
-        fi
+    if [ -d "$file" ]; then
+      summary="$(summary "$file/bin/$command")"
+    elif [ ! -h "$file" ]; then
+      summary="$(summary "$file")"
+    fi
+
+    if [ -n "$summary" ]; then
+      commands["${#commands[@]}"]="$command"
+      summaries["${#summaries[@]}"]="$summary"
+
+      if [ "${#command}" -gt "$longest_command" ]; then
+        longest_command="${#command}"
       fi
     fi
   done
@@ -34,6 +40,8 @@ print_summaries() {
 
 print_help() {
   local file="$1"
+  [ -d "$file" ] && file="$file/bin/$(basename "$1")"
+
   local usage="$(usage "$file")"
 
   if [ -n "$usage" ]; then
@@ -47,7 +55,7 @@ print_help() {
 }
 
 command_path() {
-  command -v "sub-$command" || command -v "sub-sh-$command" || true
+  echo "$_SUB_ROOT/libexec/$command"
 }
 
 summary() {
@@ -73,12 +81,6 @@ truncate() {
     echo "$string"
   fi
 }
-
-# Provide sub completions
-if [ "$1" = "--complete" ]; then
-  exec "sub-commands"
-  exit
-fi
 
 command="$1"
 case "$command" in
