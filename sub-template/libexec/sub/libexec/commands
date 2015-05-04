@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# Usage: %fullSub% commands
+# Usage: %fullSub% sub commands
 #
-# Summary: List all `%fullSub%` commands
+# Summary: List all `%fullSub% sub` commands
 #
 # Help: This command is mostly used for autocompletion in various shells, and
-# for `%fullSub% help`.
+# for `%fullSub% sub help`.
 #
 set -e
 
@@ -14,6 +14,14 @@ if [ "$1" = "--complete" ]; then
   echo --sh
   echo --no-sh
   exit
+fi
+
+if [ "$1" == "--sh" ]; then
+  sh=1
+  shift
+elif [ "$1" == "--no-sh" ]; then
+  nosh=1
+  shift
 fi
 
 shopt -s nullglob

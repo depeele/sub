@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 #
-# Usage: %fullSub% help [<cmd>]
+# Usage: %fullSub% sub help [<cmd>]
 #
 # Summary: Present help information.
 #
 # Help: Present help information.
 #
 # If <cmd> is provided, limit the information to the named command, otherwise,
-# present general help information for `%fullSub%`.
+# present general help information for `%fullSub% sub`.
 #
 set -e
 
 libexec="$_CUR_ROOT/libexec"
 
 ##
-# Generate 'Summary:' information for all `%fullSub%` commands.
+# Generate 'Summary:' information for all `%fullSub% sub` commands.
 # @method print_summaries
 #
 # global "parameters":
@@ -177,9 +177,9 @@ fi
 command="$1"
 case "$command" in
   "")
-    echo "Usage: %fullSub% <command> [<args>]
+    echo "Usage: %fullSub% sub <command> [<args>]
 
-Some useful %fullSub% commands are:
+Some useful %fullSub% sub commands are:
 $(print_summaries)
 
 See '%fullSub% help <command>' for information on a specific command."
@@ -193,7 +193,7 @@ See '%fullSub% help <command>' for information on a specific command."
     else
       avail=( $("$libexec/commands" --no-sh) )
 
-      echo "%fullSub%: no such command \`$command' : ( ${avail[@]} )" >&2
+      echo "%fullSub% sub: no such command \`$command' : ( ${avail[@]} )" >&2
       echo >&2
       exit 1
     fi

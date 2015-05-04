@@ -169,7 +169,7 @@ truncate() {
 ###############################################################################
 # Provide %sub% completions
 #
-if [ "$1" = "--complete" ]; then
+if [ "$1" = "--complete ]; then
   exec "$libexec/commands"
   exit
 fi

@@ -50,7 +50,6 @@ You can run *any* executable in the `libexec` directly, as long as it follows th
 You get a few commands that come with your sub:
 
 * `commands`: Prints out every subcommand available
-* `completions`: Helps kick off subcommand autocompletion.
 * `help`: Document how to use each subcommand
 * `init`: Shows how to load your sub with autocompletions, based on your shell.
 * `shell`: Helps with calling subcommands that might be named the same as builtin/executables.
@@ -162,6 +161,26 @@ Clone this repo:
     ./prepare.sh [name of your sub]
 
 The prepare script will run you through the steps for making your own sub. Also, don't call it `sub`, by the way! Give it a better name.
+
+### Install any desired child commands
+
+Each sub may have any number of child commands.
+
+To add a new child command, run the `%your-sub% sub add` command, providing the desired type along with any type-specific arguments.
+
+This will create a new entry in the `libexec` sub-directory of '%your-sub%' and allow the new child command to be executed via `%your-sub% %new-command-name%`.
+
+For `sub` and `file` type child commands, help is supported.
+
+For `sub` type child commands, additional sub-based features are enabled (e.g. commands/autocompletion, help, sub).
+
+Child commands may be deepely nested by using the `-s` or `sub` type for each command that will have children.
+
+### Manage child commands
+
+Further management of child commands is enabled via the `%your-sub% sub` command.
+
+This enables editing of `file` and `sub` type commands ( `%your-sub% sub edit %command-name% ...` )as well as removal of any existing child commands (`%your-sub% sub rm %command-name% ...`).
 
 ## Install your sub
 

@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Usage: %fullSub% sub edit <name>
+#
+# Summary: If the named sub is a file or sub-sub, edit.
+#
+# Help: If the named sub is a file or sub-sub, bring up the primary sub command
+# file in the user's configured editor.
+#
+# This will use the 'EDITOR' environment variable to bring up the file for
+# editing.
+#
+set -e
+
+# The current libexec
+libexec="$_CUR_ROOT/libexec"
+
+# Our parent's libexec
+plibexec="$(dirname "$(dirname "$_CUR_ROOT")")/libexec"
+
+##
+# Retrieve the type of the target sub
+# @method get_type
+#
+# global "parameters":
+#   path    The path to the candidate sub {String};
+#
+# @return The type of the target sub {String};
+#
+get_type() {
+  if [ -d "$path" ]; then
+    echo "sub"
+
+  elif [ -h "$path" ]; then
+    echo "link"
+
+  elif [ -f "$path" ]; then
+    echo "file"
+
+  fi
+}
+
+##############################################################################
+if [ $# -lt 1 ]; then
+  exec "$libexec/help" "edit"
+  exit 1
+fi
+
+name=$1
+path="$plibexec/$name"
+
+if [ ! -e "$path" ]; then
+  printf "*** The \`%s' sub does not exist\n\n" "$name"
+  exit 1
+fi
+
+type=$(get_type)
+
+case "$type" in
+  link)
+    printf "*** The \`%s' sub (link) is not directly editable\n\n" "$name"
+    ;;
+
+  file)
+    $EDITOR "$path"
+    ;;
+
+  sub)
+    $EDITOR "$path/bin/$name"
+    ;;
+esac

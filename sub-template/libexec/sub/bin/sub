@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Usage: %fullSub% sub
+#
+# Summary: Manage sub commands and child subs for `%fullSub%`
+#
+# Help: Manage sub commands and child subs for `%fullSub%`
+#
+set -e
+
+# Locate the root directory and it's libexec
+export _SUB_ROOT="$(dirname "$(dirname "$0")")"
+
+libexec="$_CUR_ROOT/libexec"
+
+command="$1"
+case "$command" in
+  "" | "-h" | "--help" )
+    exec "${libexec}/help"
+    ;;
+  * )
+    command_path="${libexec}/$command"
+    if [ -d "$command_path" ]; then
+      command_path="$command_path/bin/$command"
+    fi
+
+    if [ ! -x "$command_path" ]; then
+      avail=( $("$libexec/commands" --no-sh) )
+
+      # :NOTE: printf can't deal with an array argument, event quoted
+      echo "%fullSub% sub: no such command \`$command' : ( ${avail[@]} )" >&2
+      echo >&2
+      exit 1
+    fi
+
+    shift
+    exec "$command_path" "$@"
+    ;;
+esac

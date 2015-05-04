@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# Usage: %fullSub% sub rm [-f] <name>
+#
+# Summary: Remove an existing sub command of the given <name>.
+#
+# Help: Remove the existing `%fullSub` sub command of the given <name>.
+#
+# Unless the '-f' flag is provided, the use will be asked to verify the removal
+# before it is performed.
+#
+set -e
+
+# The current libexec
+libexec="$_CUR_ROOT/libexec"
+
+# Our parent's libexec
+plibexec="$(dirname "$(dirname "$_CUR_ROOT")")/libexec"
+
+# The location of the root-level sub-template
+repo="$_SUB_ROOT/sub-template"
+
+##
+# Retrieve the type of the target sub
+# @method get_type
+#
+# global "parameters":
+#   path    The path to the candidate sub {String};
+#
+# @return The type of the target sub {String};
+#
+get_type() {
+  if [ -d "$path" ]; then
+    echo "sub"
+
+  elif [ -h "$path" ]; then
+    echo "link"
+
+  elif [ -f "$path" ]; then
+    echo "file"
+
+  fi
+}
+
+##
+# Unless `force` is set, ask the user to verify removal of the target sub.
+# @method user_verify
+#
+# global "parameters":
+#   force     If non-zero, return immediately {Number};
+#   name      The name of the target sub {String};
+#   path      The path to the target sub {String};
+#
+# If the user does not approve, this will terminate execution.
+#
+# @return void
+#
+user_verify() {
+  [ ${force:-0} -gt 0 ] && return
+
+  read -e -p "Are you sure you want to remove the \`$name' sub? [y/N] " ans
+  [ -z $ans] && ans="n"
+
+  case "$(echo $ans | tr '[:upper:]' '[:lower:]')" in
+    y*) ans="y" ;;
+
+    *)
+      printf ">>> Aborting removal of the \`%s' sub.\n\n" "$name"
+      exit1
+      ;;
+  esac
+}
+
+##############################################################################
+[ "$1" = "-f" ] && force=1 && shift
+
+if [ $# -lt 1 ]; then
+  echo "*** Missing <name>"
+  echo
+  exec "$libexec/help" "rm"
+  exit 1
+fi
+
+name=$1
+path="$plibexec/$name"
+
+if [ ! -e "$path" ]; then
+  printf "*** The \`%s' sub does not exist\n\n" "$name"
+  exit 1
+fi
+
+type=$(get_type)
+
+user_verify
+
+case "$type" in
+  link|file)  rm -f "$path" ;;
+  sub)        rm -rf "$path";;
+esac

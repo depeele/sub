@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# Provide shell initialization to allow this sub to be used within the current
+# shell session, including autocompletion.
+#
 set -e
 
 print=""
@@ -8,74 +12,27 @@ if [ "$1" = "-" ]; then
 fi
 
 shell="$1"
-if [ -z "$shell" ]; then
-  shell="$(basename "$SHELL")"
-fi
-
-# Include the global utilities
-source "$(cd "$(dirname "$0")/.." && pwd -P)/lib/utils.sh"
-
-root="$(abs_dirname "$0")/.."
+[ -z "$shell" ] && shell="$(basename "$SHELL")"
 
 if [ -z "$print" ]; then
   case "$shell" in
-  bash )
-    profile='~/.bash_profile'
-    ;;
-  zsh )
-    profile='~/.zshenv'
-    ;;
-  * )
-    profile='your profile'
-    ;;
+    bash ) profile='~/.bash_profile' ;;
+    zsh )  profile='~/.zshenv' ;;
+    * )    profile='your profile' ;;
   esac
 
-  { echo "# Load sub automatically by adding"
+  { echo "# Load %sub% automatically by adding"
     echo "# the following to ${profile}:"
     echo
-    echo "eval \"\$(${_SUB_ROOT}/bin/sub init -)\""
+    echo "eval \"\$(${_CUR_ROOT}/bin/%sub% init -)\""
     echo
   } >&2
 
   exit 1
 fi
 
-echo "export PATH=\"\${PATH}:${_SUB_ROOT}/bin\""
+echo "export PATH=\"\${PATH}:${_CUR_ROOT}/bin\""
 
 case "$shell" in
-bash | zsh )
-  echo "source \"$root/completions/sub.${shell}\""
-  ;;
-esac
-
-commands=(`sub commands --sh`)
-OIFS=$IFS
-IFS="|"
-cat <<EOS
-_sub_wrapper() {
-  local command="\$1"
-  if [ "\$#" -gt 0 ]; then
-    shift
-  fi
-
-  case "\$command" in
-  ${commands[*]})
-    eval \`sub "sh-\$command" "\$@"\`;;
-  *)
-    command sub "\$command" "\$@";;
-  esac
-}
-EOS
-IFS=$OIFS
-
-# zsh can't pass argument with aliases, but bash can.
-# zsh can have functions with the name being only numbers, but bash can't.
-# fix both cases here by letting zsh have a function, and bash have its alias.
-case "$shell" in
-bash )
-  echo "alias sub=_sub_wrapper"
-  ;;
-zsh )
-  echo "sub=_sub_wrapper"
-  ;;
+  bash | zsh ) echo "source \"$root/completions/sub.${shell}\"" ;;
 esac

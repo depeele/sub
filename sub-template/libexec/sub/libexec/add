@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+#
+# Usage: %fullSub% sub add <type> [-Fe] <name> [srcFile | args...]
+#
+# Summary: Add a new sub command with the given <name>.
+#
+# Help: Add a new sub command for `%fullSub%` with the given <name> of the
+# specified <type>.
+#
+#   Valid types:
+#       -l | link   A soft link to the file indicated by <srcFile>;
+#
+#       -f | file   Add a simple sub file that executes the command indicated
+#                   by the remaining <args...>;
+#
+#                     Note: This will automatically include "$@" to pass any
+#                           command-line arguments through to the target
+#                           command.
+#
+#                     Note: This type typically requires that the target
+#                           command (args[0]) exist as an executable command in
+#                           your current PATH. If this isn't the case but the
+#                           sub needs to be added anyway, use the '-F' flag.
+#
+#       -s | sub    a new %fullSub% sub;
+#
+#   For both `file` and `sub` types, if the '-e' flag is provided, the primary
+#   file associated with the new sub command will be opened in the user's
+#   configured editor (per the 'EDITOR' environment variable).
+#
+set -e
+
+# The current libexec
+libexec="$_CUR_ROOT/libexec"
+
+# Our parent's libexec
+plibexec="$(dirname "$(dirname "$_CUR_ROOT")")/libexec"
+
+# The location of the root-level sub-template
+repo="$_SUB_ROOT/sub-template"
+
+##
+# See if the target already exists
+# @method check_exists
+#
+# global "parameters":
+#   name    The name of the candidate sub {String};
+#   path    The path to the candidate sub {String};
+#
+# If the sub already exists, this will terminate execution.
+#
+# @return void
+#
+check_exists() {
+  if [ -d "$path" ]; then
+    printf "*** The \`%s' sub (sub) already exists\n\n" "$name"
+    exit 1
+
+  elif [ -h "$path" ]; then
+    printf "*** The \`%s' sub (link) already exists\n\n" "$name"
+    exit 1
+
+  elif [ -f "$path" ]; then
+    printf "*** The \`%s' sub (file) already exists\n\n" "$name"
+    exit 1
+
+  fi
+}
+
+##############################################################################
+if [ $# -lt 2 ]; then
+  if [ $# -eq 1 ]; then
+    printf "*** Missing <name>\n\n"
+  fi
+
+  exec "$libexec/help" "add"
+  exit 1
+fi
+
+type=$1 && shift
+name=$1 && shift
+path="$plibexec/$name"
+
+case "$type" in
+  ##########################################################
+  # Soft link (requires the <srcFile> parameter)
+  -l|link)
+    if [ $# -lt 1 ]; then
+      printf "*** Missing <srcFile> for '%s'\n\n" "$type"
+      exec "$libexec/help" "add"
+      exit 1
+    fi
+
+    check_exists
+
+    #######
+    srcFile=$1
+    ln -s "$srcFile" "$path"
+
+    echo "New sub command \`$name' linked to \`$srcFile'"
+    echo
+    ;;
+
+  ##########################################################
+  # Sub file (requires the <args...> parameter(s))
+  -f|-fF|-Ff|-fe|-fFe|-Ffe|-feF|-Fef|file)
+    case "$type" in
+      -fF|-Ff)              force=1         ;;
+      -fe|-ef)                       edit=1 ;;
+      -fFe|-Ffe|-feF|-Fef)  force=1; edit=1 ;;
+    esac
+
+    [[ $# -gt 0 && $1 == '-F' ]] && force=1 && shift
+    [[ $# -gt 0 && $1 == '-e' ]] &&  edit=1 && shift
+
+    if [ $# -lt 1 ]; then
+      printf "*** Missing <args...> for '%s'\n\n" "$type"
+      exec "$libexec/help" "add"
+      exit 1
+    fi
+
+    check_exists
+
+    #######
+    args=( $* )
+    if [[ ${force:-0} -eq 0 && -z "$(command -v "${args[0]}")" ]]; then
+      echo "*** The \`${args[0]}' command is not in your current path"
+      echo
+      exit 1
+    fi
+
+    cat <<EOF > "$path"
+#!/usr/bin/env bash
+#
+# Usage: %fullSub% $name ...
+#
+# Summary: Summary of \`%fullSub% $name' needed...
+#
+# Help: Help for \`%fullSub% $name' needed...
+#
+# (alias for '${args[@]}')
+#
+set -e
+
+${args[@]} "\$@"
+EOF
+
+    if [[ ${edit:-0} -ne 0 ]]; then
+      $EDITOR "$path"
+    fi
+
+    echo "New sub command \`$name' generated to execute \`${args[@]}'"
+    echo
+    ;;
+
+  ##########################################################
+  # A new sub, replicated from the main's sub-template
+  -s|-se|-es|sub)
+    if [[ "$type" == '-se' || "$type" == '-es' ]]; then
+      edit=1
+    elif [[ $# -gt 0 && $1 == '-e' ]]; then
+      edit=1
+      shift
+    fi
+
+    check_exists
+
+    #######
+    cp -R "$repo" "$path"
+
+    # Prepare this new sub
+    cd "$path" && ./prepare.sh %fullSub% "$name"
+
+    if [[ ${edit:-0} -ne 0 ]]; then
+      $EDITOR "$path/bin/$name"
+    fi
+
+    echo "New sub command \`$name' generated from \`$repo'"
+    echo
+    ;;
+
+  ##########################################################
+  # Unknown type
+  *)
+    printf "*** Invalid type [ %s ]: ( -l | link, -f | file, -s | sub )\n\n" \
+                                                          "$type"
+    exec "$libexec/help" "add"
+    exit 1
+    ;;
+esac

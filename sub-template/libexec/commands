@@ -16,6 +16,14 @@ if [ "$1" = "--complete" ]; then
   exit
 fi
 
+if [ "$1" == "--sh" ]; then
+  sh=1
+  shift
+elif [ "$1" == "--no-sh" ]; then
+  nosh=1
+  shift
+fi
+
 shopt -s nullglob
 
 # Include all commands that exist in libexec
